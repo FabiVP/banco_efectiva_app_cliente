@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1098813598463",
+    "project_id": "villa-efectiva",
+    "storage_bucket": "villa-efectiva.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1098813598463:android:4a06e9c305eb764a387aca",
+        "android_client_info": {
+          "package_name": "com.example.efectiva_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDP50KRzF7pBdhZoWD17StgffBLsT6Vpwg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,157 +1,90 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/api/api_client.dart';
 import '../models/auth_models.dart';
 
 class AuthRepository {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ApiClient _api = ApiClient();
 
-  // Login con email y contraseña
-  Future<Usuario?> login(String email, String password) async {
+  Future<({String token, Usuario usuario})> register({
+    required String dni,
+    required String nombres,
+    required String apellidos,
+    required String telefono,
+    required String email,
+    required String password,
+  }) async {
     try {
-      print('🔐 PASO 1: Iniciando login para $email');
-      
-      // 1. Autenticar usuario
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      
-      final String uid = userCredential.user!.uid;
-      print('✅ PASO 2: Auth exitoso. UID: $uid');
-      
-      // 2. Intentar obtener datos de Firestore
-      print('🔍 PASO 3: Buscando documento en Firestore...');
-      DocumentSnapshot userDoc = await _firestore
-          .collection('usuarios')
-          .doc(uid)
-          .get();
-      
-      // 3. Si no existe el documento, crearlo automáticamente
-      if (!userDoc.exists) {
-        print('📝 PASO 4: Documento no existe, creando perfil automático...');
-        
-        final Map<String, dynamic> nuevoUsuario = {
-          'uid': uid,
-          'email': email,
-          'nombreCompleto': email.split('@').first,
-          'dni': '12345678',
-          'telefono': '999888777',
-          'fotoUrl': null,
-          'fechaRegistro': FieldValue.serverTimestamp(),
-          'dispositivosConfianza': [],
-          'saldoCapital': 635.00,
-          'interesesAcumulados': 6.35,
-          'numeroCuenta': '0013592210001',
-        };
-        
-        await _firestore.collection('usuarios').doc(uid).set(nuevoUsuario);
-        print('✅ PASO 5: Perfil creado exitosamente');
-        
-        return Usuario.fromJson(nuevoUsuario);
-      }
-      
-      // 4. Si existe, obtener los datos
-      print('✅ Documento encontrado');
-      final Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-      print('📄 Campos: ${data.keys}');
-      
-      // 5. Crear usuario con los datos
-      final usuario = Usuario.fromJson(data);
-      
-      print('✅ PASO 6: Usuario cargado: ${usuario.nombreCompleto}');
-      print('💰 Saldo: S/ ${usuario.saldoCapital}');
-      print('📊 Intereses: S/ ${usuario.interesesAcumulados}');
-      print('💳 Cuenta: ${usuario.numeroCuenta}');
-      
-      return usuario;
-      
-    } on FirebaseAuthException catch (e) {
-      print('❌ FirebaseAuthException: ${e.code} - ${e.message}');
-      throw _handleAuthError(e);
-    } catch (e) {
-      print('❌ Error general: $e');
-      throw Exception('Error desconocido: $e');
-    }
-  }
-
-  // Registrar nuevo usuario
-  Future<Usuario> register(String email, String password, String dni) async {
-    try {
-      print('📝 Registrando nuevo usuario: $email');
-      
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      
-      final String uid = userCredential.user!.uid;
-      
-      // Generar número de cuenta único
-      final String numeroCuenta = '001${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 12)}';
-      
-      final Map<String, dynamic> nuevoUsuario = {
-        'uid': uid,
+      final response = await _api.post('/cliente/register', body: {
+        'numero_documento': dni,
+        'nombres': nombres,
+        'apellidos': apellidos,
+        'telefono': telefono,
         'email': email,
-        'nombreCompleto': '',
-        'dni': dni,
-        'telefono': '',
-        'fotoUrl': null,
-        'fechaRegistro': FieldValue.serverTimestamp(),
-        'dispositivosConfianza': [],
-        'saldoCapital': 0.0,
-        'interesesAcumulados': 0.0,
-        'numeroCuenta': numeroCuenta,
-      };
-      
-      await _firestore.collection('usuarios').doc(uid).set(nuevoUsuario);
-      
-      print('✅ Usuario registrado exitosamente');
-      print('💳 Número de cuenta: $numeroCuenta');
-      
-      return Usuario.fromJson(nuevoUsuario);
-      
-    } on FirebaseAuthException catch (e) {
-      print('❌ FirebaseAuthException: ${e.code}');
-      throw _handleAuthError(e);
-    } catch (e) {
-      print('❌ Error: $e');
-      throw Exception('Error al registrar: $e');
-    }
-  }
+        'password': password,
+      });
 
-  // Cerrar sesión
-  Future<void> logout() async {
-    await _auth.signOut();
-    print('✅ Sesión cerrada');
-  }
+      final token = response['access_token']?.toString() ?? '';
+      final clienteData = response['cliente'] as Map<String, dynamic>?;
 
-  // Guardar dispositivo de confianza
-  Future<void> agregarDispositivoConfianza(String userId, String deviceId) async {
-    await _firestore.collection('usuarios').doc(userId).update({
-      'dispositivosConfianza': FieldValue.arrayUnion([deviceId]),
-    });
-  }
-
-  String _handleAuthError(dynamic error) {
-    if (error is FirebaseAuthException) {
-      switch (error.code) {
-        case 'user-not-found':
-          return 'Usuario no encontrado';
-        case 'wrong-password':
-          return 'Contraseña incorrecta';
-        case 'email-already-in-use':
-          return 'El correo ya está registrado';
-        case 'invalid-email':
-          return 'Email inválido';
-        case 'weak-password':
-          return 'Contraseña demasiado débil';
-        case 'network-request-failed':
-          return 'Error de conexión. Verifica tu internet';
-        default:
-          return 'Error: ${error.message}';
+      if (token.isEmpty || clienteData == null) {
+        throw Exception('Error al crear la cuenta');
       }
+
+      await _api.setToken(token);
+      final usuario = Usuario.fromJson(clienteData);
+      return (token: token, usuario: usuario);
+    } on ApiException catch (e) {
+      if (e.statusCode == 409) {
+        throw Exception('El DNI ya está registrado');
+      }
+      throw Exception(e.message);
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Error de conexión. Verifica tu conexión a internet');
     }
-    return 'Error desconocido: $error';
+  }
+
+  Future<({String token, Usuario usuario})> login(String dni, String password) async {
+    try {
+      final response = await _api.post('/cliente/login', body: {
+        'numero_documento': dni,
+        'password': password,
+      });
+
+      final token = response['access_token']?.toString() ?? '';
+      final clienteData = response['cliente'] as Map<String, dynamic>?;
+
+      if (token.isEmpty || clienteData == null) {
+        throw Exception('Credenciales inválidas');
+      }
+
+      await _api.setToken(token);
+      final usuario = Usuario.fromJson(clienteData);
+      return (token: token, usuario: usuario);
+    } on ApiException catch (e) {
+      if (e.statusCode == 423) {
+        throw Exception('Usuario bloqueado por intentos fallidos');
+      }
+      throw Exception(e.message);
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Error de conexión. Verifica tu conexión a internet');
+    }
+  }
+
+  Future<Usuario> getPerfil() async {
+    try {
+      final response = await _api.get('/cliente/perfil');
+      return Usuario.fromJson(response);
+    } on ApiException catch (e) {
+      throw Exception(e.message);
+    }
+  }
+
+  Future<void> logout() async {
+    await _api.setToken(null);
+  }
+
+  Future<bool> isLoggedIn() async {
+    return _api.isAuthenticated;
   }
 }

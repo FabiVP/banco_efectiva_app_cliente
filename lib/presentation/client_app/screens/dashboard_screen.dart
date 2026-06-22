@@ -1,19 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/home_viewmodel.dart';
 import '../widgets/saldo_card.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeViewModel>().loadDashboard();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final homeVM = context.watch<HomeViewModel>();
+    final authVM = context.watch<AuthViewModel>();
+
+    final cuenta = homeVM.cuentas.isNotEmpty ? homeVM.cuentas.first : null;
+    final movimientos = homeVM.movimientos;
+
     return Scaffold(
       backgroundColor: EfectivaColors.grisFondo,
-      body: CustomScrollView(
+      body: homeVM.state == HomeState.loading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
         slivers: [
-          // Custom header con gradiente
           SliverToBoxAdapter(
             child: Container(
               decoration: const BoxDecoration(
@@ -23,13 +45,11 @@ class DashboardScreen extends StatelessWidget {
                 bottom: false,
                 child: Column(
                   children: [
-                    // App bar personalizada
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       child: Row(
                         children: [
-                          // Logo pequeño
                           Container(
                             width: 40,
                             height: 40,
@@ -61,7 +81,7 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '¡Hola, bienvenido!',
+                                '¡Hola, ${authVM.usuarioActual?.nombreCompleto ?? 'bienvenido'}!',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.white60,
@@ -78,8 +98,6 @@ class DashboardScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    // Tabs de producto
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
@@ -91,12 +109,10 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-
-                    // Saldo card
-                    const SaldoCard(
-                      saldo: 635.00,
-                      intereses: 6.35,
-                      numeroCuenta: '0013592210001',
+                    SaldoCard(
+                      saldo: cuenta?.saldoCapital ?? 0,
+                      intereses: cuenta?.saldoInteres ?? 0,
+                      numeroCuenta: cuenta?.codCuentaAhorro ?? '---',
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -218,38 +234,18 @@ class DashboardScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildMovimiento(
-                  'Transferencia enviada',
-                  'Juan Carlos Pérez',
-                  '-S/ 150.00',
-                  'Hoy, 14:30',
-                  Icons.arrow_upward_rounded,
-                  Colors.red,
-                ),
-                _buildMovimiento(
-                  'Depósito recibido',
-                  'Empresa SAC',
-                  '+S/ 2,500.00',
-                  'Ayer, 09:15',
-                  Icons.arrow_downward_rounded,
-                  EfectivaColors.verdeExito,
-                ),
-                _buildMovimiento(
-                  'Pago de servicio',
-                  'Luz del Sur',
-                  '-S/ 85.00',
-                  '12 May, 18:00',
-                  Icons.receipt_outlined,
-                  EfectivaColors.naranjaAcento,
-                ),
-                _buildMovimiento(
-                  'Recarga celular',
-                  'Movistar - 999888777',
-                  '-S/ 20.00',
-                  '10 May, 11:45',
-                  Icons.phone_android,
-                  const Color(0xFF7C3AED),
-                ),
+                ...movimientos.map((m) => _buildMovimiento(
+                  m.concepto ?? 'Movimiento',
+                  m.codOperacion,
+                  '${m.esIngreso ? '+' : '-'}S/ ${m.monto.toStringAsFixed(2)}',
+                  _formatFecha(m.fechaOperacion),
+                  m.esIngreso
+                      ? Icons.arrow_downward_rounded
+                      : Icons.arrow_upward_rounded,
+                  m.esIngreso
+                      ? EfectivaColors.verdeExito
+                      : Colors.red,
+                )),
                 const SizedBox(height: 20),
               ]),
             ),
@@ -497,5 +493,23 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatFecha(String raw) {
+    try {
+      final dt = DateTime.parse(raw);
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inDays == 0) return 'Hoy, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      if (diff.inDays == 1) return 'Ayer, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      return '${dt.day} ${_mes(dt.month)}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  String _mes(int m) {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+    return meses[m - 1];
   }
 }

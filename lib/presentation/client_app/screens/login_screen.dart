@@ -17,7 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _dniController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _recordarUsuario = false;
   bool _obscurePassword = true;
@@ -160,10 +160,8 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildLogo() {
     return Column(
       children: [
-        // Logo container con glassmorphism
         Container(
-          width: 100,
-          height: 100,
+          width: 100, height: 100,
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
@@ -175,23 +173,16 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              'E',
-              style: GoogleFonts.inter(
-                fontSize: 48,
-                fontWeight: FontWeight.w900,
-                color: EfectivaColors.azulPrincipal,
-              ),
-            ),
+          child: ClipOval(
+            child: Image.asset('assets/images/logo_efectiva.png',
+              width: 100, height: 100, fit: BoxFit.cover),
           ),
         ),
         const SizedBox(height: 20),
-        // Nombre con estilo cursivo como la app real
         Text(
-          'Efectiva',
+          'Financiera Efectiva',
           style: GoogleFonts.pacifico(
-            fontSize: 36,
+            fontSize: 32,
             color: Colors.white,
             letterSpacing: 1.0,
           ),
@@ -253,21 +244,22 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             const SizedBox(height: 28),
 
-            // Email field
+            // DNI field
             TextFormField(
-              controller: _emailController,
+              controller: _dniController,
               decoration: InputDecoration(
-                labelText: AppStrings.correoElectronico,
+                labelText: 'DNI',
                 prefixIcon: const Icon(
-                  Icons.email_outlined,
+                  Icons.badge_outlined,
                   color: EfectivaColors.azulPrincipal,
                 ),
                 floatingLabelStyle: GoogleFonts.inter(
                   color: EfectivaColors.azulPrincipal,
                 ),
               ),
-              keyboardType: TextInputType.emailAddress,
-              validator: Validators.email,
+              keyboardType: TextInputType.number,
+              maxLength: 8,
+              validator: Validators.dni,
             ),
             const SizedBox(height: 16),
 
@@ -480,7 +472,7 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final success = await context.read<AuthViewModel>().login(
-            _emailController.text,
+            _dniController.text,
             _passwordController.text,
           );
 
@@ -530,7 +522,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _animController.dispose();
-    _emailController.dispose();
+    _dniController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

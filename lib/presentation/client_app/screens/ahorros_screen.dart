@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../viewmodels/home_viewmodel.dart';
 
 class AhorrosScreen extends StatefulWidget {
   const AhorrosScreen({super.key});
@@ -17,10 +19,17 @@ class _AhorrosScreenState extends State<AhorrosScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeViewModel>().loadCuentas();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final homeVM = context.watch<HomeViewModel>();
+    final cuentas = homeVM.cuentas;
+    final totalSaldo = homeVM.saldoTotal;
+
     return Scaffold(
       backgroundColor: EfectivaColors.grisFondo,
       body: CustomScrollView(
@@ -107,7 +116,7 @@ class _AhorrosScreenState extends State<AhorrosScreen>
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'S/ 12,450.00',
+                              '${cuentas.isNotEmpty ? cuentas.first.monedaSimbolo : 'S/'} ${totalSaldo.toStringAsFixed(2)}',
                               style: GoogleFonts.inter(
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
@@ -122,13 +131,15 @@ class _AhorrosScreenState extends State<AhorrosScreen>
                               _buildMiniStat(
                                   Icons.trending_up_rounded,
                                   'Intereses ganados',
-                                  'S/ 83.00',
+                                  cuentas.isNotEmpty && cuentas.first.saldoInteres != null
+                                      ? '${cuentas.first.monedaSimbolo} ${cuentas.first.saldoInteres!.toStringAsFixed(2)}'
+                                      : 'S/ 0.00',
                                   EfectivaColors.verdeExito),
                               const SizedBox(width: 16),
                               _buildMiniStat(
                                   Icons.calendar_today_rounded,
-                                  'Este mes',
-                                  'S/ 12.35',
+                                  'Cuentas activas',
+                                  '${cuentas.length} cuentas',
                                   EfectivaColors.amarilloAcento),
                             ],
                           ),
@@ -217,33 +228,40 @@ class _AhorrosScreenState extends State<AhorrosScreen>
   }
 
   Widget _buildSaldoTab() {
+    final homeVM = context.watch<HomeViewModel>();
+    final cuentas = homeVM.cuentas;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Cuentas de ahorro
-        _buildCuentaAhorro(
-          'Cuenta Ahorro Soles',
-          '001-359-221-0001',
-          'S/ 10,200.00',
-          '8.0%',
-          EfectivaColors.azulPrincipal,
-        ),
-        const SizedBox(height: 12),
-        _buildCuentaAhorro(
-          'Cuenta Ahorro Dólares',
-          '001-359-221-0002',
-          '\$ 650.00',
-          '3.5%',
-          EfectivaColors.verdeExito,
-        ),
-        const SizedBox(height: 12),
-        _buildCuentaAhorro(
-          'Ahorro a Plazo Fijo',
-          '001-359-221-0003',
-          'S/ 1,600.00',
-          '10.5%',
-          EfectivaColors.naranjaAcento,
-        ),
+        ...cuentas.map((c) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildCuentaAhorro(
+            c.tipoCuenta ?? 'Cuenta Ahorro',
+            c.codCuentaAhorro,
+            '${c.monedaSimbolo} ${c.saldoCapital.toStringAsFixed(2)}',
+            c.tea != null ? '${(c.tea! * 100).toStringAsFixed(1)}%' : '---',
+            EfectivaColors.azulPrincipal,
+          ),
+        )),
+        if (cuentas.isEmpty) ...[
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Center(
+              child: Text(
+                'No tienes cuentas de ahorro activas',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: EfectivaColors.grisTexto,
+                ),
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         // Botón nuevo depósito
         Container(

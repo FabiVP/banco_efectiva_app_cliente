@@ -19,14 +19,13 @@ class Validators {
     return null;
   }
 
-  // Validar contraseña
   static String? password(String? value) {
     if (value == null || value.isEmpty) {
       return 'La contraseña es obligatoria';
     }
     
-    if (value.length < 6) {
-      return 'La contraseña debe tener al menos 6 caracteres';
+    if (value.length < 4) {
+      return 'La contraseña debe tener al menos 4 caracteres';
     }
     
     return null;

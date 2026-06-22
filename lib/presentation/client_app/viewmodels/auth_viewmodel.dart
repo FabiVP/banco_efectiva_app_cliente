@@ -17,13 +17,27 @@ class AuthViewModel extends ChangeNotifier {
   Usuario? get usuarioActual => _usuarioActual;
   bool get isDemoMode => _isDemoMode;
 
-  // Login real con Firebase
-  Future<bool> login(String email, String password) async {
+  Future<bool> register({
+    required String dni,
+    required String nombres,
+    required String apellidos,
+    required String telefono,
+    required String email,
+    required String password,
+  }) async {
     _state = AuthState.loading;
     notifyListeners();
 
     try {
-      _usuarioActual = await _authRepository.login(email, password);
+      final result = await _authRepository.register(
+        dni: dni,
+        nombres: nombres,
+        apellidos: apellidos,
+        telefono: telefono,
+        email: email,
+        password: password,
+      );
+      _usuarioActual = result.usuario;
       _isDemoMode = false;
       _state = AuthState.success;
       notifyListeners();
@@ -36,26 +50,39 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  // Login en modo demo (sin Firebase)
+  Future<bool> login(String dni, String password) async {
+    _state = AuthState.loading;
+    notifyListeners();
+
+    try {
+      final result = await _authRepository.login(dni, password);
+      _usuarioActual = result.usuario;
+      _isDemoMode = false;
+      _state = AuthState.success;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _state = AuthState.error;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> loginDemo() async {
     _state = AuthState.loading;
     notifyListeners();
 
-    // Simular un pequeño delay para UX
     await Future.delayed(const Duration(milliseconds: 800));
 
     _usuarioActual = Usuario(
-      uid: 'demo-user-001',
+      id: 'demo-user-001',
+      codCliente: 'C9999',
+      numeroDocumento: '72458901',
+      nombres: 'Carlos',
+      apellidos: 'Mendoza Torres',
       email: 'carlos.mendoza@efectiva.com',
-      nombreCompleto: 'Carlos Mendoza Torres',
-      dni: '72458901',
       telefono: '987654321',
-      fotoUrl: null,
-      fechaRegistro: DateTime(2024, 3, 15),
-      dispositivosConfianza: ['Samsung Galaxy S23'],
-      saldoCapital: 12635.00,
-      interesesAcumulados: 83.50,
-      numeroCuenta: '0013592210001',
     );
 
     _isDemoMode = true;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../data/repositories/cuenta_repository.dart';
+import '../../../core/api/api_client.dart';
 
 class TransferenciasScreen extends StatefulWidget {
   const TransferenciasScreen({super.key});
@@ -16,6 +18,7 @@ class _TransferenciasScreenState extends State<TransferenciasScreen>
   final _montoController = TextEditingController();
   final _celularController = TextEditingController();
   String _metodoSeleccionado = 'yapea';
+  final CuentaRepository _repo = CuentaRepository(api: ApiClient());
 
   @override
   void initState() {
@@ -505,20 +508,43 @@ class _TransferenciasScreenState extends State<TransferenciasScreen>
                 Expanded(
                   flex: 2,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '✅ Transferencia exitosa',
-                            style: GoogleFonts.inter(),
-                          ),
-                          backgroundColor: EfectivaColors.verdeExito,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                      );
+                      try {
+                        await _repo.crearOperacion(
+                          codCuentaOrigen: '',
+                          tipo: 'TRF',
+                          monto: double.tryParse(_montoController.text) ?? 0,
+                          concepto: 'Transferencia via ${_metodoSeleccionado.toUpperCase()} a ${_celularController.text}',
+                          canal: _metodoSeleccionado == 'yapea' ? 'YAP' : 'PLN',
+                          moneda: 'PEN',
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('✅ Transferencia exitosa',
+                                  style: GoogleFonts.inter()),
+                              backgroundColor: EfectivaColors.verdeExito,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: $e',
+                                  style: GoogleFonts.inter()),
+                              backgroundColor: EfectivaColors.rojoError,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: EfectivaColors.verdeExito,

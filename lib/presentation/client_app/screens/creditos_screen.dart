@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../viewmodels/creditos_viewmodel.dart';
+import '../../../data/models/cuanta_models.dart';
 
 class CreditosScreen extends StatefulWidget {
   const CreditosScreen({super.key});
@@ -17,10 +20,14 @@ class _CreditosScreenState extends State<CreditosScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CreditosViewModel>().loadCreditos();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<CreditosViewModel>();
     return Scaffold(
       backgroundColor: EfectivaColors.grisFondo,
       body: CustomScrollView(
@@ -58,7 +65,6 @@ class _CreditosScreenState extends State<CreditosScreen>
                         ],
                       ),
                     ),
-                    // Resumen de créditos
                     Container(
                       margin: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                       padding: const EdgeInsets.all(20),
@@ -90,20 +96,15 @@ class _CreditosScreenState extends State<CreditosScreen>
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
-                                      Icons.check_circle,
-                                      size: 14,
-                                      color: EfectivaColors.verdeExito,
-                                    ),
+                                    const Icon(Icons.check_circle,
+                                        size: 14,
+                                        color: EfectivaColors.verdeExito),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      'Al día',
-                                      style: GoogleFonts.inter(
-                                        color: EfectivaColors.verdeExito,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
+                                    Text('Al día',
+                                        style: GoogleFonts.inter(
+                                            color: EfectivaColors.verdeExito,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700)),
                                   ],
                                 ),
                               ),
@@ -113,7 +114,7 @@ class _CreditosScreenState extends State<CreditosScreen>
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'S/ 7,850.00',
+                              'S/ ${vm.totalDeuda.toStringAsFixed(2)}',
                               style: GoogleFonts.inter(
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
@@ -125,11 +126,11 @@ class _CreditosScreenState extends State<CreditosScreen>
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              _buildCreditStat(
-                                  'Próxima cuota', 'S/ 485.00'),
+                              _buildCreditStat('Créditos activos',
+                                  '${vm.creditos.length}'),
                               const SizedBox(width: 16),
                               _buildCreditStat(
-                                  'Vence', '15 Jun 2025'),
+                                  'Saldo total', 'S/ ${vm.totalDeuda.toStringAsFixed(2)}'),
                             ],
                           ),
                         ],
@@ -211,34 +212,21 @@ class _CreditosScreenState extends State<CreditosScreen>
   }
 
   Widget _buildPrestamosTab() {
+    final vm = context.watch<CreditosViewModel>();
+    final creditos = vm.creditos;
+
+    if (vm.state == CreditosState.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildPrestamoCard(
-          'Préstamo Personal',
-          'PP-2024-00145',
-          5000.00,
-          7850.00,
-          0.65,
-          24,
-          15,
-          '18.5%',
-          EfectivaColors.azulPrincipal,
-        ),
-        const SizedBox(height: 12),
-        _buildPrestamoCard(
-          'Préstamo Consumo',
-          'PC-2024-00089',
-          3000.00,
-          3000.00,
-          0.20,
-          12,
-          2,
-          '22.0%',
-          EfectivaColors.naranjaAcento,
-        ),
+        ...creditos.map((c) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildPrestamoCard(c),
+        )),
         const SizedBox(height: 24),
-        // Banner solicitar préstamo
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -277,19 +265,24 @@ class _CreditosScreenState extends State<CreditosScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Solicitar ahora',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: EfectivaColors.naranjaAcento,
+                    InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/solicitar-credito');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Solicitar ahora',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: EfectivaColors.naranjaAcento,
+                          ),
                         ),
                       ),
                     ),
@@ -317,17 +310,13 @@ class _CreditosScreenState extends State<CreditosScreen>
     );
   }
 
-  Widget _buildPrestamoCard(
-    String nombre,
-    String codigo,
-    double montoOriginal,
-    double montoRestante,
-    double progreso,
-    int totalCuotas,
-    int cuotasPagadas,
-    String tea,
-    Color color,
-  ) {
+  Widget _buildPrestamoCard(Credito credito) {
+    final progreso = credito.cuotasTotal != null && credito.cuotasTotal! > 0
+        ? (credito.cuotasPagadas ?? 0) / credito.cuotasTotal!
+        : 0.0;
+    final color = credito.estado == 'vigente'
+        ? EfectivaColors.azulPrincipal
+        : EfectivaColors.naranjaAcento;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -362,7 +351,7 @@ class _CreditosScreenState extends State<CreditosScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      nombre,
+                      credito.producto ?? 'Crédito',
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -370,7 +359,7 @@ class _CreditosScreenState extends State<CreditosScreen>
                       ),
                     ),
                     Text(
-                      codigo,
+                      credito.codCuentaCredito,
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: EfectivaColors.grisSubtitulo,
@@ -410,7 +399,7 @@ class _CreditosScreenState extends State<CreditosScreen>
                 ),
               ),
               Text(
-                '$cuotasPagadas / $totalCuotas cuotas',
+                '${credito.cuotasPagadas ?? 0} / ${credito.cuotasTotal ?? 0} cuotas',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -434,20 +423,19 @@ class _CreditosScreenState extends State<CreditosScreen>
           Row(
             children: [
               _buildInfoChip('Monto original',
-                  'S/ ${montoOriginal.toStringAsFixed(2)}'),
-              _buildInfoChip('Monto restante',
-                  'S/ ${montoRestante.toStringAsFixed(2)}'),
-              _buildInfoChip('TEA', tea),
+                  'S/ ${(credito.montoDesembolsado ?? 0).toStringAsFixed(2)}'),
+              _buildInfoChip('Saldo pendiente',
+                  'S/ ${(credito.saldoCapital ?? 0).toStringAsFixed(2)}'),
+              _buildInfoChip('TEA', '${credito.tea?.toStringAsFixed(1) ?? "---"}%'),
             ],
           ),
           const SizedBox(height: 12),
-          // Botón pagar
           SizedBox(
             width: double.infinity,
             height: 44,
             child: ElevatedButton(
               onPressed: () {
-                _pagarCuota(nombre);
+                _pagarCuota(credito);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
@@ -496,110 +484,38 @@ class _CreditosScreenState extends State<CreditosScreen>
   }
 
   Widget _buildCronogramaTab() {
-    // Datos del cronograma de pagos
-    final List<Map<String, dynamic>> cuotas = [
-      {
-        'numero': 1,
-        'fecha': '15/01/2025',
-        'capital': 200.00,
-        'interes': 85.00,
-        'cuota': 285.00,
-        'estado': 'pagada'
-      },
-      {
-        'numero': 2,
-        'fecha': '15/02/2025',
-        'capital': 205.00,
-        'interes': 80.00,
-        'cuota': 285.00,
-        'estado': 'pagada'
-      },
-      {
-        'numero': 3,
-        'fecha': '15/03/2025',
-        'capital': 210.00,
-        'interes': 75.00,
-        'cuota': 285.00,
-        'estado': 'pagada'
-      },
-      {
-        'numero': 4,
-        'fecha': '15/04/2025',
-        'capital': 215.00,
-        'interes': 70.00,
-        'cuota': 285.00,
-        'estado': 'pagada'
-      },
-      {
-        'numero': 5,
-        'fecha': '15/05/2025',
-        'capital': 220.00,
-        'interes': 65.00,
-        'cuota': 285.00,
-        'estado': 'pagada'
-      },
-      {
-        'numero': 6,
-        'fecha': '15/06/2025',
-        'capital': 225.00,
-        'interes': 60.00,
-        'cuota': 285.00,
-        'estado': 'pendiente'
-      },
-      {
-        'numero': 7,
-        'fecha': '15/07/2025',
-        'capital': 230.00,
-        'interes': 55.00,
-        'cuota': 285.00,
-        'estado': 'pendiente'
-      },
-      {
-        'numero': 8,
-        'fecha': '15/08/2025',
-        'capital': 235.00,
-        'interes': 50.00,
-        'cuota': 285.00,
-        'estado': 'pendiente'
-      },
-      {
-        'numero': 9,
-        'fecha': '15/09/2025',
-        'capital': 240.00,
-        'interes': 45.00,
-        'cuota': 285.00,
-        'estado': 'pendiente'
-      },
-      {
-        'numero': 10,
-        'fecha': '15/10/2025',
-        'capital': 245.00,
-        'interes': 40.00,
-        'cuota': 285.00,
-        'estado': 'pendiente'
-      },
-      {
-        'numero': 11,
-        'fecha': '15/11/2025',
-        'capital': 250.00,
-        'interes': 35.00,
-        'cuota': 285.00,
-        'estado': 'pendiente'
-      },
-      {
-        'numero': 12,
-        'fecha': '15/12/2025',
-        'capital': 255.00,
-        'interes': 30.00,
-        'cuota': 285.00,
-        'estado': 'pendiente'
-      },
-    ];
+    final vm = context.watch<CreditosViewModel>();
+    final cuotas = vm.cronograma;
+    final credito = vm.creditoSeleccionado ?? (vm.creditos.isNotEmpty ? vm.creditos.first : null);
+
+    if (cuotas.isEmpty && credito != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        vm.seleccionarCredito(credito);
+      });
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Encabezado
+        if (vm.creditos.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: DropdownButtonFormField<Credito>(
+              initialValue: vm.creditoSeleccionado,
+              decoration: InputDecoration(
+                labelText: 'Seleccionar crédito',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              items: vm.creditos.map((c) => DropdownMenuItem(
+                value: c,
+                child: Text('${c.producto ?? "Crédito"} - ${c.codCuentaCredito}'),
+              )).toList(),
+              onChanged: (c) {
+                if (c != null) vm.seleccionarCredito(c);
+              },
+            ),
+          ),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -615,22 +531,16 @@ class _CreditosScreenState extends State<CreditosScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Cronograma de Pagos',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: EfectivaColors.azulPrincipal,
-                      ),
-                    ),
-                    Text(
-                      'Préstamo Personal — PP-2024-00145',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: EfectivaColors.azulPrincipal
-                            .withValues(alpha: 0.7),
-                      ),
-                    ),
+                    Text('Cronograma de Pagos',
+                        style: GoogleFonts.inter(fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: EfectivaColors.azulPrincipal)),
+                    Text(credito != null
+                        ? '${credito.producto ?? "Crédito"} — ${credito.codCuentaCredito}'
+                        : 'Seleccione un crédito',
+                        style: GoogleFonts.inter(fontSize: 12,
+                            color: EfectivaColors.azulPrincipal
+                                .withValues(alpha: 0.7))),
                   ],
                 ),
               ),
@@ -638,219 +548,81 @@ class _CreditosScreenState extends State<CreditosScreen>
           ),
         ),
         const SizedBox(height: 16),
-
-        // Tabla header
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: EfectivaColors.azulPrincipal,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(14),
+        if (cuotas.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(child: Text('Seleccione un crédito para ver el cronograma')),
+          )
+        else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: EfectivaColors.azulPrincipal,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 30, child: Text('N°', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white))),
+                Expanded(flex: 2, child: Text('Fecha', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white))),
+                Expanded(flex: 2, child: Text('Capital', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white), textAlign: TextAlign.right)),
+                Expanded(flex: 2, child: Text('Interés', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white), textAlign: TextAlign.right)),
+                Expanded(flex: 2, child: Text('Cuota', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white), textAlign: TextAlign.right)),
+                const SizedBox(width: 50),
+              ],
             ),
           ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 30,
-                child: Text(
-                  'N°',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+          ...cuotas.map((cuota) => _buildCuotaRow(cuota)),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Cronograma descargado', style: GoogleFonts.inter()),
+                  backgroundColor: EfectivaColors.verdeExito,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Fecha',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Capital',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.right,
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Interés',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.right,
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Cuota',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.right,
-                ),
-              ),
-              const SizedBox(width: 50),
-            ],
+              );
+            },
+            icon: const Icon(Icons.download_rounded),
+            label: const Text('Descargar cronograma PDF'),
           ),
-        ),
-
-        // Filas
-        ...cuotas.map((cuota) => _buildCuotaRow(cuota)),
-
-        const SizedBox(height: 16),
-        // Descargar
-        OutlinedButton.icon(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Cronograma descargado',
-                    style: GoogleFonts.inter()),
-                backgroundColor: EfectivaColors.verdeExito,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            );
-          },
-          icon: const Icon(Icons.download_rounded),
-          label: const Text('Descargar cronograma PDF'),
-        ),
+        ],
       ],
     );
   }
 
-  Widget _buildCuotaRow(Map<String, dynamic> cuota) {
-    final esPagada = cuota['estado'] == 'pagada';
-    final esProxima = cuota['numero'] == 6; // Primera pendiente
-
+  Widget _buildCuotaRow(Cuota cuota) {
+    final esPagada = cuota.estadoCuota == 'pagado';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: esProxima
-            ? EfectivaColors.amarilloClaro
-            : Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: EfectivaColors.grisClaro,
-            width: 0.5,
-          ),
-        ),
+        color: esPagada ? Colors.white : EfectivaColors.amarilloClaro,
+        border: Border(bottom: BorderSide(color: EfectivaColors.grisClaro, width: 0.5)),
       ),
       child: Row(
         children: [
-          SizedBox(
-            width: 30,
-            child: Text(
-              '${cuota['numero']}',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: EfectivaColors.negroTexto,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              cuota['fecha'],
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: EfectivaColors.grisTexto,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'S/ ${cuota['capital'].toStringAsFixed(2)}',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: EfectivaColors.negroTexto,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'S/ ${cuota['interes'].toStringAsFixed(2)}',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: EfectivaColors.grisTexto,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'S/ ${cuota['cuota'].toStringAsFixed(2)}',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: EfectivaColors.negroTexto,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
+          SizedBox(width: 30, child: Text('${cuota.nroCuota}',
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: EfectivaColors.negroTexto))),
+          Expanded(flex: 2, child: Text(cuota.fechaVencimiento,
+              style: GoogleFonts.inter(fontSize: 12, color: EfectivaColors.grisTexto))),
+          Expanded(flex: 2, child: Text('S/ ${(cuota.montoCapital ?? 0).toStringAsFixed(2)}',
+              style: GoogleFonts.inter(fontSize: 12, color: EfectivaColors.negroTexto), textAlign: TextAlign.right)),
+          Expanded(flex: 2, child: Text('S/ ${(cuota.montoInteres ?? 0).toStringAsFixed(2)}',
+              style: GoogleFonts.inter(fontSize: 12, color: EfectivaColors.grisTexto), textAlign: TextAlign.right)),
+          Expanded(flex: 2, child: Text('S/ ${(cuota.montoCuota ?? 0).toStringAsFixed(2)}',
+              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: EfectivaColors.negroTexto), textAlign: TextAlign.right)),
           SizedBox(
             width: 50,
-            child: Center(
-              child: esPagada
-                  ? const Icon(
-                      Icons.check_circle,
-                      color: EfectivaColors.verdeExito,
-                      size: 20,
-                    )
-                  : esProxima
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: EfectivaColors.naranjaAcento,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'HOY',
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        )
-                      : Icon(
-                          Icons.schedule,
-                          color: EfectivaColors.grisSubtitulo,
-                          size: 18,
-                        ),
-            ),
-          ),
+            child: Center(child: esPagada
+                ? const Icon(Icons.check_circle, color: EfectivaColors.verdeExito, size: 20)
+                : Icon(Icons.schedule, color: EfectivaColors.grisSubtitulo, size: 18))),
         ],
       ),
     );
   }
 
-  void _pagarCuota(String prestamo) {
+  void _pagarCuota(Credito credito) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -862,75 +634,38 @@ class _CreditosScreenState extends State<CreditosScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: EfectivaColors.grisClaro,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: EfectivaColors.grisClaro,
+                    borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
-            Text(
-              'Pagar cuota',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text('Pagar cuota', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            Text(
-              prestamo,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: EfectivaColors.grisTexto,
-              ),
-            ),
+            Text(credito.producto ?? 'Crédito', style: GoogleFonts.inter(fontSize: 14, color: EfectivaColors.grisTexto)),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: EfectivaColors.azulSuave,
-                borderRadius: BorderRadius.circular(14),
-              ),
+              decoration: BoxDecoration(color: EfectivaColors.azulSuave, borderRadius: BorderRadius.circular(14)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Monto de cuota',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: EfectivaColors.grisTexto,
-                    ),
-                  ),
-                  Text(
-                    'S/ 285.00',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: EfectivaColors.azulPrincipal,
-                    ),
-                  ),
+                  Text('Monto de cuota', style: GoogleFonts.inter(fontSize: 14, color: EfectivaColors.grisTexto)),
+                  Text('S/ ${(credito.saldoCapital ?? 0).toStringAsFixed(2)}',
+                      style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: EfectivaColors.azulPrincipal)),
                 ],
               ),
             ),
             const SizedBox(height: 20),
             SizedBox(
-              width: double.infinity,
-              height: 52,
+              width: double.infinity, height: 52,
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Cuota pagada exitosamente',
-                          style: GoogleFonts.inter()),
+                      content: Text('Cuota pagada exitosamente', style: GoogleFonts.inter()),
                       backgroundColor: EfectivaColors.verdeExito,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   );
                 },

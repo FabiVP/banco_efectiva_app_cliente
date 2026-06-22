@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/validators.dart';
+import '../viewmodels/auth_viewmodel.dart';
 
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
@@ -419,8 +421,26 @@ class _RegistroScreenState extends State<RegistroScreen> {
   }
 
   Future<void> _handleRegistro() async {
-    if (_formKey.currentState!.validate() && _aceptaTerminos) {
-      // Could call context.read<AuthViewModel>().register() here
+    if (!_formKey.currentState!.validate() || !_aceptaTerminos) return;
+
+    final nombreCompleto = _nombreController.text.trim();
+    final espacio = nombreCompleto.indexOf(' ');
+    final nombres = espacio == -1 ? nombreCompleto : nombreCompleto.substring(0, espacio);
+    final apellidos = espacio == -1 ? '' : nombreCompleto.substring(espacio + 1).trim();
+
+    final viewModel = context.read<AuthViewModel>();
+    final success = await viewModel.register(
+      dni: _dniController.text.trim(),
+      nombres: nombres,
+      apellidos: apellidos,
+      telefono: _telefonoController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -434,6 +454,21 @@ class _RegistroScreenState extends State<RegistroScreen> {
         ),
       );
       Navigator.pushReplacementNamed(context, '/');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            viewModel.errorMessage.isNotEmpty
+                ? viewModel.errorMessage
+                : 'Error al crear la cuenta',
+            style: GoogleFonts.inter(),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 

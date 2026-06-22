@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../viewmodels/home_viewmodel.dart';
 
 class TarjetaScreen extends StatefulWidget {
   const TarjetaScreen({super.key});
@@ -22,10 +24,17 @@ class _TarjetaScreenState extends State<TarjetaScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = context.read<HomeViewModel>();
+      if (vm.tarjetas.isEmpty) vm.loadDashboard();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final homeVM = context.watch<HomeViewModel>();
+    final tarjeta = homeVM.tarjetas.isNotEmpty ? homeVM.tarjetas.first : null;
+    _tarjetaActiva = tarjeta?.estado == 'activo';
     return Scaffold(
       backgroundColor: EfectivaColors.grisFondo,
       body: CustomScrollView(
@@ -62,7 +71,7 @@ class _TarjetaScreenState extends State<TarjetaScreen>
                                 ),
                               ),
                               Text(
-                                'VISA',
+                                tarjeta?.marca ?? 'VISA',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.white60,
@@ -267,6 +276,16 @@ class _TarjetaScreenState extends State<TarjetaScreen>
   }
 
   Widget _buildTarjetaVisa() {
+    final homeVM = context.watch<HomeViewModel>();
+    final tarjeta = homeVM.tarjetas.isNotEmpty ? homeVM.tarjetas.first : null;
+    final numero = tarjeta?.numeroEnmascarado ?? '****  ****  ****  4397';
+    final ultimos4 = numero.replaceAll(RegExp(r'[^\d]'), '').length >= 4
+        ? numero.replaceAll(RegExp(r'[^\d]'), '')
+        : '1234';
+    final numeroDisplay = _mostrarDatos
+        ? numero
+        : '****  ****  ****  ${ultimos4.substring(ultimos4.length - 4)}';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       height: 210,
@@ -356,9 +375,7 @@ class _TarjetaScreenState extends State<TarjetaScreen>
                 ),
                 // Card number
                 Text(
-                  _mostrarDatos
-                      ? '4397  ****  ****  1234'
-                      : '****  ****  ****  4397',
+                  numeroDisplay,
                   style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 22,

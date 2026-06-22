@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../data/repositories/cuenta_repository.dart';
+import '../../../core/api/api_client.dart';
 
 class PagosScreen extends StatefulWidget {
   const PagosScreen({super.key});
@@ -14,6 +16,7 @@ class _PagosScreenState extends State<PagosScreen> {
   final _codigoController = TextEditingController();
   final _montoController = TextEditingController();
   final _searchController = TextEditingController();
+  final CuentaRepository _repo = CuentaRepository(api: ApiClient());
 
   final List<Map<String, dynamic>> _categorias = [
     {'nombre': 'Luz Y Gas', 'icon': Icons.lightbulb_outline_rounded},
@@ -362,18 +365,43 @@ class _PagosScreenState extends State<PagosScreen> {
                 Expanded(
                   flex: 2,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('✅ Pago realizado exitosamente',
-                              style: GoogleFonts.inter()),
-                          backgroundColor: EfectivaColors.verdeExito,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                      );
+                      try {
+                        await _repo.crearOperacion(
+                          codCuentaOrigen: '',
+                          tipo: 'PAG',
+                          monto: double.tryParse(_montoController.text) ?? 0,
+                          concepto: 'Pago de $_categoriaSeleccionada - ${_codigoController.text}',
+                          canal: 'APP',
+                          moneda: 'PEN',
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('✅ Pago realizado exitosamente',
+                                  style: GoogleFonts.inter()),
+                              backgroundColor: EfectivaColors.verdeExito,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: $e',
+                                  style: GoogleFonts.inter()),
+                              backgroundColor: EfectivaColors.rojoError,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: EfectivaColors.verdeExito,

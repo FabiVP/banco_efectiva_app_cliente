@@ -7,12 +7,12 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primaryColor: EfectivaColors.azulPrincipal,
+      primaryColor: EfectivaColors.azulCorporativo,
       scaffoldBackgroundColor: EfectivaColors.grisFondo,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: EfectivaColors.azulPrincipal,
-        primary: EfectivaColors.azulPrincipal,
-        secondary: EfectivaColors.naranjaAcento,
+        seedColor: EfectivaColors.azulCorporativo,
+        primary: EfectivaColors.azulCorporativo,
+        secondary: EfectivaColors.verdeExito,
         surface: EfectivaColors.blanco,
         error: EfectivaColors.rojoError,
       ),
@@ -50,7 +50,7 @@ class AppTheme {
         bodySmall: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w400,
-          color: EfectivaColors.grisSubtitulo,
+          color: EfectivaColors.grisMedio,
         ),
         labelLarge: GoogleFonts.inter(
           fontSize: 14,
@@ -59,7 +59,7 @@ class AppTheme {
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: EfectivaColors.azulPrincipal,
+        backgroundColor: EfectivaColors.azulCorporativo,
         foregroundColor: EfectivaColors.blanco,
         elevation: 0,
         centerTitle: false,
@@ -71,7 +71,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: EfectivaColors.azulPrincipal,
+          backgroundColor: EfectivaColors.azulCorporativo,
           foregroundColor: EfectivaColors.blanco,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
@@ -86,12 +86,12 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: EfectivaColors.azulPrincipal,
+          foregroundColor: EfectivaColors.azulCorporativo,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          side: const BorderSide(color: EfectivaColors.azulPrincipal),
+          side: const BorderSide(color: EfectivaColors.azulCorporativo),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -101,18 +101,20 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: EfectivaColors.blanco,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: EfectivaColors.grisClaro),
+          borderSide: const BorderSide(color: EfectivaColors.grisBorde),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: EfectivaColors.grisClaro),
+          borderSide: const BorderSide(color: EfectivaColors.grisBorde),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: EfectivaColors.azulPrincipal, width: 2),
+          borderSide:
+              const BorderSide(color: EfectivaColors.azulCorporativo, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -123,7 +125,7 @@ class AppTheme {
           fontSize: 14,
         ),
         hintStyle: GoogleFonts.inter(
-          color: EfectivaColors.grisSubtitulo,
+          color: EfectivaColors.grisMedio,
           fontSize: 14,
         ),
       ),
@@ -137,8 +139,8 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: EfectivaColors.blanco,
-        selectedItemColor: EfectivaColors.azulPrincipal,
-        unselectedItemColor: EfectivaColors.grisSubtitulo,
+        selectedItemColor: EfectivaColors.azulCorporativo,
+        unselectedItemColor: EfectivaColors.grisMedio,
         type: BottomNavigationBarType.fixed,
         elevation: 10,
         selectedLabelStyle: GoogleFonts.inter(
@@ -151,16 +153,29 @@ class AppTheme {
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: EfectivaColors.grisClaro,
+        color: EfectivaColors.grisBorde,
         thickness: 1,
         space: 0,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return EfectivaColors.azulCorporativo;
+          }
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStateProperty.all(EfectivaColors.blanco),
+        side: const BorderSide(color: EfectivaColors.grisMedio, width: 1.5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return EfectivaColors.azulPrincipal;
+            return EfectivaColors.azulCorporativo;
           }
-          return EfectivaColors.grisSubtitulo;
+          return EfectivaColors.grisMedio;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {

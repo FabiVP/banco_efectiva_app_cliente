@@ -174,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen>
             ],
           ),
           child: ClipOval(
-            child: Image.asset('assets/images/logo_efectiva.png',
+            child: Image.asset('assets/images/icono_efectiva.png',
               width: 100, height: 100, fit: BoxFit.cover),
           ),
         ),
@@ -322,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ],
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: _mostrarRecuperarContrasena,
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
                     minimumSize: Size.zero,
@@ -462,6 +462,89 @@ class _LoginScreenState extends State<LoginScreen>
                   ],
                 );
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _mostrarRecuperarContrasena() {
+    final emailController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: EfectivaColors.grisClaro,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Recuperar contraseña',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ingresa tu correo electrónico y te enviaremos las instrucciones.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: EfectivaColors.grisTexto,
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Correo electrónico',
+                prefixIcon: Icon(Icons.email_outlined,
+                    color: EfectivaColors.azulPrincipal),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (emailController.text.trim().isEmpty) return;
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '📧 Revisa tu correo para restablecer la contraseña',
+                        style: GoogleFonts.inter(),
+                      ),
+                      backgroundColor: EfectivaColors.verdeExito,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EfectivaColors.azulPrincipal,
+                ),
+                child: const Text('Enviar instrucciones'),
+              ),
             ),
           ],
         ),

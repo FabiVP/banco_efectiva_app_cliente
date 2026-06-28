@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,7 +14,12 @@ class ApiException implements Exception {
 class ApiClient {
   static const String _baseUrlKey = 'api_base_url';
   static const String _tokenKey = 'auth_token';
-  static const String defaultBaseUrl = 'http://localhost:8003';
+
+  static String get defaultBaseUrl {
+    final url = dotenv.env['API_BASE_URL'];
+    if (url != null && url.isNotEmpty) return url;
+    return 'http://localhost:8003';
+  }
 
   static final ApiClient _instance = ApiClient._();
   factory ApiClient() => _instance;

@@ -44,7 +44,7 @@ class PerfilScreen extends StatelessWidget {
                           IconButton(
                             icon: const Icon(Icons.settings_outlined,
                                 color: Colors.white70, size: 22),
-                            onPressed: () {},
+                            onPressed: () => _configurarSeguridad(context),
                           ),
                         ],
                       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'core/api/api_client.dart';
 import 'core/theme/app_theme.dart';
@@ -14,6 +15,7 @@ import 'presentation/client_app/screens/perfil_screen.dart';
 import 'presentation/client_app/screens/ahorros_screen.dart';
 import 'presentation/client_app/screens/creditos_screen.dart';
 import 'presentation/client_app/screens/solicitud_screen.dart';
+import 'presentation/client_app/screens/cuenta_screen.dart';
 import 'presentation/client_app/viewmodels/auth_viewmodel.dart';
 import 'presentation/client_app/viewmodels/home_viewmodel.dart';
 import 'presentation/client_app/viewmodels/creditos_viewmodel.dart';
@@ -27,6 +29,8 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
+
+  await dotenv.load(fileName: '.env');
 
   await ApiClient().init();
   runApp(const EfectivaApp());
@@ -60,6 +64,7 @@ class EfectivaApp extends StatelessWidget {
           '/ahorros': (context) => const AhorrosScreen(),
           '/creditos': (context) => const CreditosScreen(),
           '/solicitar-credito': (context) => const SolicitudScreen(),
+          '/cuenta': (context) => const CuentaScreen(),
         },
       ),
     );

@@ -16,6 +16,7 @@ class _PagosScreenState extends State<PagosScreen> {
   final _codigoController = TextEditingController();
   final _montoController = TextEditingController();
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   final CuentaRepository _repo = CuentaRepository(api: ApiClient());
 
   final List<Map<String, dynamic>> _categorias = [
@@ -37,7 +38,9 @@ class _PagosScreenState extends State<PagosScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search_rounded),
-            onPressed: () {},
+            onPressed: () {
+              _searchFocusNode.requestFocus();
+            },
           ),
         ],
       ),
@@ -62,6 +65,7 @@ class _PagosScreenState extends State<PagosScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: TextField(
                 controller: _searchController,
+                focusNode: _searchFocusNode,
                 decoration: InputDecoration(
                   hintText: 'Buscar empresa',
                   prefixIcon: const Icon(Icons.search_rounded,
@@ -447,6 +451,7 @@ class _PagosScreenState extends State<PagosScreen> {
     _codigoController.dispose();
     _montoController.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 }

@@ -374,7 +374,7 @@ class _TransferenciasScreenState extends State<TransferenciasScreen>
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _realizarTransferenciaInterbancaria,
                 child: const Text('Transferir'),
               ),
             ),
@@ -457,6 +457,102 @@ class _TransferenciasScreenState extends State<TransferenciasScreen>
           ),
         );
       },
+    );
+  }
+
+  void _realizarTransferenciaInterbancaria() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: EfectivaColors.grisClaro,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Confirmar transferencia',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildConfirmRow('Monto', 'S/ ${_montoController.text}'),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      try {
+                        await _repo.crearOperacion(
+                          codCuentaOrigen: '',
+                          tipo: 'TRF',
+                          monto: double.tryParse(_montoController.text) ?? 0,
+                          concepto: 'Transferencia interbancaria',
+                          canal: 'WEB',
+                          moneda: 'PEN',
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('✅ Transferencia exitosa',
+                                  style: GoogleFonts.inter()),
+                              backgroundColor: EfectivaColors.verdeExito,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: $e',
+                                  style: GoogleFonts.inter()),
+                              backgroundColor: EfectivaColors.rojoError,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: EfectivaColors.verdeExito,
+                    ),
+                    child: const Text('Confirmar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

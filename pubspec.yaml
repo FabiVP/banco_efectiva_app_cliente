@@ -30,6 +30,7 @@ dependencies:
   # Útiles
   intl: ^0.18.1
   image_picker: ^1.0.5
+  flutter_dotenv: ^5.2.1
 
   font_awesome_flutter: ^10.7.0
 
@@ -42,4 +43,5 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/logo_efectiva.png
+    - .env
+    - assets/images/icono_efectiva.png

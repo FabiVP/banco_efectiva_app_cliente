@@ -126,24 +126,43 @@ class _PromocionesTab extends StatelessWidget {
             'Solicítalo aquí, fácil y rápido.\nHasta S/ 50,000 a tasas preferenciales.',
             Icons.flash_on,
             EfectivaColors.naranjaAcento,
+            () => Navigator.pushNamed(context, '/creditos'),
           ),
           _buildPromoCard(
             'Cuenta de Ahorro Premium',
             'Gana hasta 8% de interés anual.\nAbre tu cuenta 100% digital.',
             Icons.savings,
             EfectivaColors.verdeExito,
+            () => Navigator.pushNamed(context, '/ahorros'),
           ),
           _buildPromoCard(
             'Tarjeta VISA Digital',
             'Compras seguras en línea.\nSin costo de mantenimiento.',
             Icons.credit_card,
             EfectivaColors.azulPrincipal,
+            () => Navigator.pushNamed(context, '/tarjeta'),
           ),
           _buildPromoCard(
             'Seguro de vida',
             'Protege a los tuyos desde S/ 5/mes.\nCobertura hasta S/ 100,000.',
             Icons.shield_outlined,
             const Color(0xFF7C3AED),
+            () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  title: const Text('Seguro de vida'),
+                  content: const Text('Comunícate con tu asesor para contratar el seguro de vida.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cerrar'),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -151,7 +170,7 @@ class _PromocionesTab extends StatelessWidget {
   }
 
   Widget _buildPromoCard(
-      String title, String description, IconData icon, Color color) {
+      String title, String description, IconData icon, Color color, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -170,7 +189,7 @@ class _PromocionesTab extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {},
+            onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(

@@ -20,6 +20,7 @@ class SaldoCard extends StatefulWidget {
 
 class _SaldoCardState extends State<SaldoCard> {
   bool _mostrarSaldo = true;
+  bool _esFavorito = false;
 
   @override
   Widget build(BuildContext context) {
@@ -79,9 +80,24 @@ class _SaldoCardState extends State<SaldoCard> {
               const Spacer(),
               // Favorito
               IconButton(
-                icon: const Icon(Icons.star_border_rounded,
-                    color: EfectivaColors.amarilloAcento, size: 22),
-                onPressed: () {},
+                icon: Icon(
+                  _esFavorito ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: EfectivaColors.amarilloAcento, size: 22,
+                ),
+                onPressed: () {
+                  setState(() => _esFavorito = !_esFavorito);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        _esFavorito ? '⭐ Añadido a favoritos' : 'Eliminado de favoritos',
+                        style: GoogleFonts.inter(),
+                      ),
+                      duration: const Duration(seconds: 1),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
               ),

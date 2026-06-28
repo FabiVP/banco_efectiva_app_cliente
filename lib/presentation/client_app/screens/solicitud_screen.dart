@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -106,7 +103,7 @@ class _SolicitudFormState extends State<_SolicitudForm> {
               ] else ...[
                 _buildField('Tipo de negocio',
                   DropdownButtonFormField<String>(
-                    value: vm.tipoNegocio,
+                    initialValue: vm.tipoNegocio,
                     decoration: _inputDec(),
                     items: _tiposNegocio.map((t) => DropdownMenuItem(
                       value: t, child: Text(_capitalize(t)),
@@ -153,7 +150,7 @@ class _SolicitudFormState extends State<_SolicitudForm> {
                   )),
                 _buildField('Plazo (meses)',
                   DropdownButtonFormField<int>(
-                    value: vm.plazoMeses,
+                    initialValue: vm.plazoMeses,
                     decoration: _inputDec(),
                     items: [6, 12, 18, 24, 36].map((m) => DropdownMenuItem(
                       value: m, child: Text('$m meses'),
@@ -162,7 +159,7 @@ class _SolicitudFormState extends State<_SolicitudForm> {
                   )),
                 _buildField('Garantía',
                   DropdownButtonFormField<String>(
-                    value: vm.garantia,
+                    initialValue: vm.garantia,
                     decoration: _inputDec(),
                     items: _garantias.map((g) => DropdownMenuItem(
                       value: g, child: Text(_capitalize(g.replaceAll('_', ' '))),

@@ -90,11 +90,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ],
                           ),
                           const Spacer(),
-                          _buildHeaderButton(Icons.notifications_none_rounded,
-                              context),
+                          _buildHeaderButton(
+                              Icons.notifications_none_rounded,
+                              context,
+                              () => _mostrarNotificaciones(context)),
                           const SizedBox(width: 8),
                           _buildHeaderButton(
-                              Icons.qr_code_scanner_rounded, context),
+                              Icons.qr_code_scanner_rounded,
+                              context,
+                              () => _escanearQR(context)),
                         ],
                       ),
                     ),
@@ -216,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () => _verTodosMovimientos(context),
                     child: Text(
                       'Ver todo',
                       style: GoogleFonts.inter(
@@ -255,7 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildHeaderButton(IconData icon, BuildContext context) {
+  Widget _buildHeaderButton(IconData icon, BuildContext context, VoidCallback onPressed) {
     return Container(
       width: 40,
       height: 40,
@@ -266,7 +270,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: IconButton(
         icon: Icon(icon, color: Colors.white, size: 20),
         padding: EdgeInsets.zero,
-        onPressed: () {},
+        onPressed: onPressed,
       ),
     );
   }
@@ -491,6 +495,185 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _verTodosMovimientos(BuildContext context) {
+    final homeVM = context.read<HomeViewModel>();
+    homeVM.loadMovimientos();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scrollController) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: EfectivaColors.grisClaro,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Todos los movimientos',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Consumer<HomeViewModel>(
+                  builder: (ctx, vm, _) {
+                    if (vm.state == HomeState.loading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final items = vm.movimientos;
+                    if (items.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No hay movimientos registrados',
+                          style: GoogleFonts.inter(color: EfectivaColors.grisTexto),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: items.length,
+                      itemBuilder: (ctx, i) {
+                        final m = items[i];
+                        return _buildMovimiento(
+                          m.concepto ?? 'Movimiento',
+                          m.codOperacion,
+                          '${m.esIngreso ? '+' : '-'}S/ ${m.monto.toStringAsFixed(2)}',
+                          _formatFecha(m.fechaOperacion),
+                          m.esIngreso
+                              ? Icons.arrow_downward_rounded
+                              : Icons.arrow_upward_rounded,
+                          m.esIngreso
+                              ? EfectivaColors.verdeExito
+                              : Colors.red,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _mostrarNotificaciones(BuildContext context) {
+    final homeVM = context.read<HomeViewModel>();
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: EfectivaColors.grisClaro,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Notificaciones',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (homeVM.notificaciones.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text(
+                    'No tienes notificaciones pendientes',
+                    style: GoogleFonts.inter(color: EfectivaColors.grisTexto),
+                  ),
+                ),
+              )
+            else
+              ...homeVM.notificaciones.map((n) => Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: n.leida ? Colors.white : EfectivaColors.azulSuave,
+                  borderRadius: BorderRadius.circular(14),
+                  border: n.leida ? null : Border.all(color: EfectivaColors.azulPrincipal.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: n.leida
+                            ? EfectivaColors.grisClaro
+                            : EfectivaColors.azulPrincipal.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        n.leida ? Icons.notifications_none : Icons.notifications_active,
+                        color: n.leida ? EfectivaColors.grisSubtitulo : EfectivaColors.azulPrincipal,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(n.titulo, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+                          if (n.cuerpo != null) ...[
+                            const SizedBox(height: 2),
+                            Text(n.cuerpo!, style: GoogleFonts.inter(fontSize: 12, color: EfectivaColors.grisTexto)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _escanearQR(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Escáner QR próximo', style: GoogleFonts.inter()),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
